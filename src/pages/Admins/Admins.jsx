@@ -1,8 +1,10 @@
 import { Table, Input, Button, Modal, Select, message } from 'antd'
-import { SearchOutlined, CloseOutlined, ControlOutlined } from '@ant-design/icons'
+import { SearchOutlined, EditOutlined, CloseOutlined, ControlOutlined } from '@ant-design/icons'
 import { useState, useEffect } from 'react'
 import styles from './Admins.module.css'
 import api from '../../api/axios'
+
+const ROLE_IDS = { ADMIN: 1, MODERATOR: 2, SELLER: 3, BUYER: 4 }
 
 function Admins() {
   const [data, setData] = useState([])
@@ -13,16 +15,14 @@ function Admins() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState('')
-
-  // TODO: розкоментувати коли з'явиться ендпоінт зміни ролей
-  // const [addOpen, setAddOpen] = useState(false)
-  // const [editOpen, setEditOpen] = useState(false)
-  // const [editAdmin, setEditAdmin] = useState(null)
-  // const [editRole, setEditRole] = useState('ADMIN')
-  // const [users, setUsers] = useState([])
-  // const [selectedUser, setSelectedUser] = useState(null)
-  // const [newRole, setNewRole] = useState('ADMIN')
-  // const [saving, setSaving] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editAdmin, setEditAdmin] = useState(null)
+  const [editRole, setEditRole] = useState('ADMIN')
+  const [users, setUsers] = useState([])
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [newRole, setNewRole] = useState('ADMIN')
+  const [saving, setSaving] = useState(false)
 
   const fetchAdmins = async () => {
     try {
@@ -37,28 +37,27 @@ function Admins() {
           rolesStr: (u.roles || []).map(r => r.name).join(', ')
         }))
       setData(admins)
-    } catch (err) {
+    } catch {
       message.error('Failed to load admins')
     } finally {
       setLoading(false)
     }
   }
 
-  // TODO: розкоментувати коли з'явиться ендпоінт зміни ролей
-  // const fetchUsers = async () => {
-  //   try {
-  //     const res = await api.get('/users?per_page=100&page=1')
-  //     const items = res.data.data.items
-  //     const nonAdmins = items.filter(u =>
-  //       !(u.roles || []).some(r => r.name === 'ADMIN' || r.name === 'MODERATOR')
-  //     )
-  //     setUsers(nonAdmins.map(u => ({ value: u.id, label: `${u.name || ''} (${u.email})` })))
-  //   } catch (err) {}
-  // }
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/users?per_page=100&page=1')
+      const items = res.data.data.items
+      const nonAdmins = items.filter(u =>
+        !(u.roles || []).some(r => r.name === 'ADMIN' || r.name === 'MODERATOR')
+      )
+      setUsers(nonAdmins.map(u => ({ value: u.id, label: `${u.name || ''} (${u.email})`, login: u.login })))
+    } catch {}
+  }
 
   useEffect(() => {
     fetchAdmins()
-    // fetchUsers() // TODO
+    fetchUsers()
   }, [])
 
   const filteredData = data.filter(a => {
@@ -77,37 +76,79 @@ function Admins() {
   const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize))
   const pagedData = filteredData.slice((page - 1) * pageSize, page * pageSize)
 
-  // TODO: розкоментувати коли з'явиться ендпоінт зміни ролей
-  // const handleDelete = async (id) => {
-  //   if (!window.confirm('Remove admin role? User will become a Buyer.')) return
-  //   try {
-  //     await api.patch(`/users/${id}`, { roles: ['BUYER'] })
-  //     message.success('Admin removed')
-  //     fetchAdmins()
-  //     fetchUsers()
-  //   } catch (err) {
-  //     message.error('Failed to remove admin')
-  //   }
-  // }
+  const handleDelete = async (record) => {
+    if (!window.confirm('Remove admin role? User will become a Buyer.')) return
+    try {
+      await api.patch(`/users/${record.id}/role`, {
+        login: record.login,
+        role_id: ROLE_IDS.BUYER
+      })
+      message.success('Admin removed')
+      fetchAdmins()
+      fetchUsers()
+    } catch {
+      message.error('Failed to remove admin')
+    }
+  }
 
-  // TODO: розкоментувати коли з'явиться ендпоінт зміни ролей
-  // const handleTrashSelected = async () => {
-  //   if (!selectedKeys.length) return message.warning('No admins selected')
-  //   if (!window.confirm(`Remove admin role from ${selectedKeys.length} users?`)) return
-  //   try {
-  //     await Promise.all(selectedKeys.map(id => api.patch(`/users/${id}`, { roles: ['BUYER'] })))
-  //     message.success('Admins removed')
-  //     setSelectedKeys([])
-  //     fetchAdmins()
-  //     fetchUsers()
-  //   } catch (err) {
-  //     message.error('Failed to remove selected')
-  //   }
-  // }
+  const handleTrashSelected = async () => {
+    if (!selectedKeys.length) return message.warning('No admins selected')
+    if (!window.confirm(`Remove admin role from ${selectedKeys.length} users?`)) return
+    try {
+      const selected = data.filter(u => selectedKeys.includes(u.id))
+      await Promise.all(selected.map(u =>
+        api.patch(`/users/${u.id}/role`, { login: u.login, role_id: ROLE_IDS.BUYER })
+      ))
+      message.success('Admins removed')
+      setSelectedKeys([])
+      fetchAdmins()
+      fetchUsers()
+    } catch {
+      message.error('Failed to remove selected')
+    }
+  }
 
-  // TODO: розкоментувати коли з'явиться ендпоінт зміни ролей
-  // const handleAddSave = async () => { ... }
-  // const handleEditSave = async () => { ... }
+  const handleAddSave = async () => {
+    if (!selectedUser) return message.warning('Select a user')
+    const user = users.find(u => u.value === selectedUser)
+    if (!user) return
+    setSaving(true)
+    try {
+      await api.patch(`/users/${selectedUser}/role`, {
+        login: user.login,
+        role_id: ROLE_IDS[newRole]
+      })
+      message.success('Admin added')
+      setAddOpen(false)
+      setSelectedUser(null)
+      setNewRole('ADMIN')
+      fetchAdmins()
+      fetchUsers()
+    } catch {
+      message.error('Failed to add admin')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEditSave = async () => {
+    if (!editAdmin) return
+    setSaving(true)
+    try {
+      await api.patch(`/users/${editAdmin.id}/role`, {
+        login: editAdmin.login,
+        role_id: ROLE_IDS[editRole]
+      })
+      message.success('Role updated')
+      setEditOpen(false)
+      setEditAdmin(null)
+      fetchAdmins()
+    } catch {
+      message.error('Failed to update role')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const rowSelection = {
     selectedRowKeys: selectedKeys,
@@ -119,14 +160,26 @@ function Admins() {
     { title: 'Email', dataIndex: 'email' },
     { title: 'Phone', dataIndex: 'phone_number', render: v => v || '-' },
     { title: 'Roles', dataIndex: 'rolesStr' },
-    // TODO: розкоментувати коли з'явиться ендпоінт зміни ролей
-    // {
-    //   title: '',
-    //   width: 50,
-    //   render: (_, record) => (
-    //     <CloseOutlined style={{ color: '#ff4d4f', cursor: 'pointer' }} onClick={() => handleDelete(record.id)} />
-    //   ),
-    // },
+    {
+      title: '',
+      width: 80,
+      render: (_, record) => (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <EditOutlined
+            style={{ color: '#555', cursor: 'pointer' }}
+            onClick={() => {
+              setEditAdmin(record)
+              setEditRole((record.roles || [])[0]?.name || 'ADMIN')
+              setEditOpen(true)
+            }}
+          />
+          <CloseOutlined
+            style={{ color: '#ff4d4f', cursor: 'pointer' }}
+            onClick={() => handleDelete(record)}
+          />
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -142,8 +195,7 @@ function Admins() {
           />
           <Button icon={<ControlOutlined />} className={styles.filterIcon} onClick={() => setFilterOpen(true)} />
         </div>
-        {/* TODO: розкоментувати коли з'явиться ендпоінт зміни ролей */}
-        {/* <Button className={styles.addBtn} onClick={() => setAddOpen(true)}>Add New</Button> */}
+        <Button className={styles.addBtn} onClick={() => setAddOpen(true)}>Add New</Button>
       </div>
 
       <Table
@@ -157,8 +209,7 @@ function Admins() {
 
       <div className={styles.footer}>
         <div className={styles.footerLeft}>
-          {/* TODO: onClick={handleTrashSelected} — розкоментувати коли з'явиться ендпоінт */}
-          <Button className={styles.trashBtn} disabled={!selectedKeys.length}>
+          <Button className={styles.trashBtn} disabled={!selectedKeys.length} onClick={handleTrashSelected}>
             Trash selected
           </Button>
         </div>
@@ -202,9 +253,8 @@ function Admins() {
         </div>
       </Modal>
 
-      {/* TODO: розкоментувати коли з'явиться ендпоінт зміни ролей */}
       {/* Add New Admin Modal */}
-      {/* <Modal open={addOpen} onCancel={() => setAddOpen(false)} footer={null} title="Add admin" width={320} centered>
+      <Modal open={addOpen} onCancel={() => setAddOpen(false)} footer={null} title="Add admin" width={320} centered>
         <div className={styles.filterModal}>
           <p className={styles.filterLabel}>Select user</p>
           <Select
@@ -228,10 +278,10 @@ function Admins() {
           />
           <Button className={styles.selectBtn} onClick={handleAddSave} loading={saving}>Add</Button>
         </div>
-      </Modal> */}
+      </Modal>
 
       {/* Edit Admin Modal */}
-      {/* <Modal open={editOpen} onCancel={() => setEditOpen(false)} footer={null} title="Edit admin" width={280} centered>
+      <Modal open={editOpen} onCancel={() => setEditOpen(false)} footer={null} title="Edit role" width={280} centered>
         <div className={styles.filterModal}>
           <p className={styles.filterLabel}>Role</p>
           <Select
@@ -245,7 +295,7 @@ function Admins() {
           />
           <Button className={styles.selectBtn} onClick={handleEditSave} loading={saving}>Save</Button>
         </div>
-      </Modal> */}
+      </Modal>
     </div>
   )
 }
