@@ -1,16 +1,40 @@
-# React + Vite
+# Klikava Admin Panel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Адмін-панель та seller-кабінет для маркетплейсу Klikava.
 
-Currently, two official plugins are available:
+## Стек
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React** — бібліотека для побудови UI
+- **Vite** — інструмент збірки
+- **Ant Design** — UI-компоненти
+- **React Router** — маршрутизація
+- **Axios** — HTTP-запити до API
 
-## React Compiler
+## Запуск проекту
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+## Збірка для продакшену
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm run build
+```
+
+## Структура
+
+- `/src/pages/SellerPanel` — seller-кабінет (продукти, замовлення, статистика, профіль)
+- `/src/pages/Users`, `/Admins`, `/Products`, `/Categories` — адмін-панель
+- `/src/layouts` — layout-и з сайдбарами
+- `/src/api/axios.js` — axios з JWT interceptor
+
+## Авторизація
+
+Після логіну токен зберігається в `localStorage` під ключем `token`.  
+`ADMIN/MODERATOR` → адмін-панель, `SELLER` → seller-кабінет.
+
+## API
+
+Бекенд: FastAPI на `http://3.65.169.203:7777`
