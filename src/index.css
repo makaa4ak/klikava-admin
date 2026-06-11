@@ -1,0 +1,61 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.ant-menu-dark .ant-menu-item {
+  width: 100% !important;
+  height: 46px !important;
+  line-height: 46px !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding-left: 24px !important;
+  color: #aaaaaa !important;
+  border-bottom: 1px solid #2e2e2e !important;
+}
+
+.ant-menu-dark .ant-menu-item:hover {
+  background: #2a2a2a !important;
+  color: white !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected {
+  background: #424242 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected .anticon {
+  color: white !important;
+}
+
+/* убираем outline при клике */
+.ant-menu-dark .ant-menu-item:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+
+
+/* Убираем синюю линию у таблицы */
+.ant-table-cell {
+  border-right: none !important;
+}
+
+.ant-table-selection-column {
+  border-right: none !important;
+}
+
+/* Убираем outline при клике */
+.ant-checkbox-wrapper:focus,
+.ant-checkbox:focus,
+.ant-checkbox-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #f9f9f9 !important;
+}
