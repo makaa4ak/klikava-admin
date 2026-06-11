@@ -157,7 +157,7 @@ function Users() {
           />
           <Button icon={<ControlOutlined />} className={styles.filterIcon} onClick={() => setFilterOpen(true)} />
         </div>
-        <Button className={styles.addBtn} onClick={() => setAddOpen(true)}>Add New</Button>
+        <Button className={styles.addBtn} onClick={() => setAddOpen(true)}>Add New!</Button>
       </div>
 
       <Table
